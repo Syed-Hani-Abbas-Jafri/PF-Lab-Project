@@ -1,210 +1,115 @@
 /**
- * Project: Batch Palindrome Checker with Line + Word Analysis
+ * Project: Batch Palindrome Checker (Simplified)
  * Language: C
+ * Features: Simplified logic using stdbool, unified analysis function.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h> // Added for cleaner logic
 
-#define MAX_LINE_LENGTH 2000
+#define MAX_LINE 2000
 #define MAX_WORD 256
-#define OUTPUT_FILENAME "results_report.txt"
+#define REPORT_FILE "results_report.txt"
+#define REPORT_BUF 20000 
 
-// Structure to hold statistics
 typedef struct {
-    int total_processed;
-    int line_palindrome_count;
-    int line_non_palindrome_count;
-    int total_word_palindromes;
+    int total, line_pals, line_non_pals, word_pals;
 } Stats;
 
-
-// Normalize function (lowercase + remove non-alphanumeric)
-void normalizeString(const char *input, char *output) {
-    int j = 0,i;
-    for (i = 0; input[i] != '\0'; i++) {
-        if (isalnum((unsigned char)input[i])) {
-            output[j++] = tolower((unsigned char)input[i]);
-        }
-    }
-    output[j] = '\0';
+// Normalize: lowercase + keep only alphanumeric
+void normalizeString(const char *in, char *out) {
+    int j = 0;
+    for (int i = 0; in[i]; i++) 
+        if (isalnum((unsigned char)in[i])) out[j++] = tolower((unsigned char)in[i]);
+    out[j] = '\0';
 }
 
-
-// Check palindrome + explanation
-int analyzePalindrome(const char *cleanStr, char *reason) {
-    int len = strlen(cleanStr);
-
-    if (len == 0) {
-        strcpy(reason, "No alphanumeric content");
-        return 1;
-    }
-
-    int left = 0, right = len - 1;
-
-    while (left < right) {
-        if (cleanStr[left] != cleanStr[right]) {
-            sprintf(reason,
-                "Mismatch at positions %d and %d: '%c' vs '%c'",
-                left + 1, right + 1, cleanStr[left], cleanStr[right]
-            );
-            return 0;
-        }
-        left++;
-        right--;
-    }
-
-    strcpy(reason, "Perfect Match");
-    return 1;
-}
-
-
-// Check individual words for palindromes
-int isWordPalindrome(const char *word) {
-    char clean[MAX_WORD];
-    normalizeString(word, clean);
-
-    int len = strlen(clean);
-    int left = 0, right = len - 1;
-
-    if (len < 2) return 0;
-
-    while (left < right) {
-        if (clean[left] != clean[right]) return 0;
-        left++;
-        right--;
-    }
-
-    return 1;
-}
-
-
-void processFile(const char *inputFilename) {
-    FILE *inFile = fopen(inputFilename, "r");
-    FILE *outFile = fopen(OUTPUT_FILENAME, "w");
-
-    if (!inFile) {
-        printf("Error: Cannot open file '%s'\n", inputFilename);
-        return;
-    }
-    if (!outFile) {
-        printf("Error: Cannot create output file.\n");
-        fclose(inFile);
-        return;
-    }
-
-    char line[MAX_LINE_LENGTH];
-    char cleanLine[MAX_LINE_LENGTH];
-    char reason[MAX_LINE_LENGTH];
-    Stats stats = {0};
-
-    // For global word-level palindromes
-    char allWordPalindromes[5000] = "";
-
-    // Output header
-    fprintf(outFile,
-        "%-30s | %-15s | %-40s | %s\n",
-        "Original Text", "Line Result", "Reason", "Palindrome Words"
-    );
-    fprintf(outFile,
-        "---------------------------------------------------------------------------------------------------------------\n"
-    );
-
-    printf("\nProcessing file: %s...\n", inputFilename);
-
-    while (fgets(line, sizeof(line), inFile)) {
-        line[strcspn(line, "\n")] = 0;
-        if (strlen(line) == 0) continue;
-
-        stats.total_processed++;
-
-        // Normalize line
-        normalizeString(line, cleanLine);
-
-        // Line-level palindrome check
-        int isLinePal = analyzePalindrome(cleanLine, reason);
-
-        if (isLinePal)
-            stats.line_palindrome_count++;
-        else
-            stats.line_non_palindrome_count++;
-
-        // ==========================================
-        // WORD-LEVEL PALINDROME CHECK
-        // ==========================================
-
-        char wordCopy[MAX_LINE_LENGTH];
-        strcpy(wordCopy, line);
-
-        char *token = strtok(wordCopy, " ,.!?;:\"()[]{}-");
-        char linePalWords[1000] = "";
-        int foundWordPal = 0;
-
-        while (token != NULL) {
-            if (isWordPalindrome(token)) {
-                foundWordPal = 1;
-                strcat(linePalWords, token);
-                strcat(linePalWords, " ");
-
-                // Add to global palindrome list
-                strcat(allWordPalindromes, token);
-                strcat(allWordPalindromes, " ");
-
-                stats.total_word_palindromes++;
-            }
-            token = strtok(NULL, " ,.!?;:\"()[]{}-");
-        }
-
-        // Write to output file
-        fprintf(outFile,
-            "%-30s | %-15s | %-40s | %s\n",
-            line,
-            isLinePal ? "PALINDROME" : "NOT PALINDROME",
-            isLinePal ? "---" : reason,
-            foundWordPal ? linePalWords : "None"
-        );
-    }
-
-    // SUMMARY TO FILE
-    fprintf(outFile,
-        "---------------------------------------------------------------------------------------------------------------\n"
-    );
-    fprintf(outFile,
-        "SUMMARY:\nLines: %d | Line Palindromes: %d | Line Non-Palindromes: %d | Palindrome Words Found: %d\n",
-        stats.total_processed,
-        stats.line_palindrome_count,
-        stats.line_non_palindrome_count,
-        stats.total_word_palindromes
-    );
-
-    fprintf(outFile,
-        "\nALL PALINDROME WORDS IN FILE:\n%s\n", 
-        stats.total_word_palindromes ? allWordPalindromes : "None found"
-    );
-
-    fclose(inFile);
-    fclose(outFile);
-
-    // ==========================================
-    // CONSOLE OUTPUT (CLI)
-    // ==========================================
-    printf("\n--- Processing Complete ---\n");
-    printf("Total Lines Processed:    %d\n", stats.total_processed);
-    printf("Line Palindromes Found:   %d\n", stats.line_palindrome_count);
-    printf("Word Palindromes Found:   %d\n", stats.total_word_palindromes);
+// Unified Palindrome Checker
+// If 'reason' is NULL, it performs a silent check (for words).
+// If 'reason' is provided, it fills it with failure details (for lines).
+bool checkPalindrome(const char *str, char *reason) {
+    int len = strlen(str), l = 0, r = len - 1;
     
-    printf("\n--- Exact Palindromes Found ---\n");
-    if (stats.total_word_palindromes > 0) {
-        printf("%s\n", allWordPalindromes);
-    } else {
-        printf("None found.\n");
+    if (len == 0) {
+        if (reason) strcpy(reason, "No alphanumeric content");
+        return true;
     }
 
-    printf("\n--- Done! ---\nReport saved to: %s\n\n", OUTPUT_FILENAME);
+    while (l < r) {
+        if (str[l] != str[r]) {
+            if (reason) sprintf(reason, "Mismatch: %d & %d ('%c' vs '%c')", l+1, len-r, str[l], str[r]);
+            return false;
+        }
+        l++; r--;
+    }
+    
+    if (reason) strcpy(reason, "Perfect Match");
+    return true;
 }
 
+void processFile(const char *filename) {
+    FILE *in = fopen(filename, "r");
+    FILE *out = fopen(REPORT_FILE, "w");
+    if (!in || !out) { printf("Error accessing files.\n"); return; }
+
+    char line[MAX_LINE], clean[MAX_LINE], reason[MAX_LINE], allPals[REPORT_BUF] = "";
+    Stats s = {0};
+
+    fprintf(out, "%-30s | %-15s | %-40s | %s\n", "Original", "Result", "Reason", "Palindrome Words");
+    fprintf(out, "---------------------------------------------------------------------------------------------------\n");
+    printf("\nProcessing: %s...\n", filename);
+
+    while (fgets(line, sizeof(line), in)) {
+        line[strcspn(line, "\n")] = 0;
+        if (!*line) continue;
+
+        s.total++;
+        normalizeString(line, clean);
+        
+        // Check Line
+        bool isPal = checkPalindrome(clean, reason);
+        (isPal) ? s.line_pals++ : s.line_non_pals++;
+
+        // Check Words
+        char copy[MAX_LINE], linePals[1000] = "";
+        strcpy(copy, line);
+        char *tok = strtok(copy, " ,.!?;:\"()[]{}-");
+        bool foundWord = false;
+
+        while (tok) {
+            char cleanWord[MAX_WORD];
+            normalizeString(tok, cleanWord);
+            if (strlen(cleanWord) >= 2 && checkPalindrome(cleanWord, NULL)) {
+                foundWord = true;
+                strcat(linePals, tok); strcat(linePals, " ");
+                if (strlen(allPals) + strlen(tok) + 2 < REPORT_BUF) {
+                    strcat(allPals, tok); strcat(allPals, ", ");
+                }
+                s.word_pals++;
+            }
+            tok = strtok(NULL, " ,.!?;:\"()[]{}-");
+        }
+
+        fprintf(out, "%-30s | %-15s | %-40s | %s\n", 
+                line, isPal ? "PALINDROME" : "NOT PALINDROME", isPal ? "---" : reason, foundWord ? linePals : "None");
+    }
+
+    // Summary
+    fprintf(out, "---------------------------------------------------------------------------------------------------\n");
+    fprintf(out, "SUMMARY: Lines: %d | Palindromes: %d | Failures: %d | Word Pals: %d\n", 
+            s.total, s.line_pals, s.line_non_pals, s.word_pals);
+    fprintf(out, "\nALL WORD PALINDROMES:\n%s\n", s.word_pals ? allPals : "None");
+
+    fclose(in); fclose(out);
+
+    // CLI Output
+    printf("\n--- Complete ---\nTotal Lines: %d\nLine Pals: %d\nWord Pals: %d\n", s.total, s.line_pals, s.word_pals);
+    printf("\n--- Exact Words Found ---\n%s\n", s.word_pals ? allPals : "None found.");
+    printf("\nDetailed report: %s\n", REPORT_FILE);
+}
 
 int main() {
     char filename[100];
@@ -221,34 +126,28 @@ int main() {
         printf("Enter choice: ");
 
         if (scanf("%d", &choice) != 1) {
-            while (getchar() != '\n');
+            while (getchar() != '\n'); 
             printf("Invalid input.\n");
             continue;
         }
-
-        getchar();
+        getchar(); 
 
         switch (choice) {
             case 1:
-                printf("Enter filename: ");
+                printf("Enter filename (e.g., input.txt): ");
                 fgets(filename, sizeof(filename), stdin);
-                filename[strcspn(filename, "\n")] = 0;
+                filename[strcspn(filename, "\n")] = 0; 
                 processFile(filename);
                 break;
-
             case 2:
-                printf("\nThis program checks:\n");
-                printf("- If the ENTIRE LINE is a palindrome\n");
-                printf("- Palindrome WORDS inside the line\n");
-                printf("- Lists ALL palindrome words found in the file\n");
+                printf("\nThis program checks:\n- Whole line palindromes\n- Individual words\n- Failure reasons\n");
                 break;
-
             case 3:
                 printf("Exiting...\n");
                 return 0;
-
             default:
                 printf("Invalid choice.\n");
         }
     }
+    return 0;
 }
