@@ -1,7 +1,6 @@
 /**
  * Project: Batch Palindrome Checker (Simplified)
  * Language: C
- * Features: Simplified logic using stdbool, unified analysis function.
  */
 
 #include <stdio.h>
@@ -151,3 +150,4 @@ int main() {
     }
     return 0;
 }
+
