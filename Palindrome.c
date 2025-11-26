@@ -12,25 +12,19 @@
 #define REPORT_FILE "results_report.txt"
 #define REPORT_BUF 20000
 
-/* ----------------------------------------------------
-   FIXED: DECLARATIONS ADDED
----------------------------------------------------- */
+
 int getLength(const char *str);
 int getNextWord(const char *line, int *pos, char *word);
 void appendString(char *dest, const char *src);
 
-/* ----------------------------------------------------
-   Helper: Get string length (replacement for strlen)
----------------------------------------------------- */
+
 int getLength(const char *str) {
     int i = 0;
     while (str[i] != '\0') i++;
     return i;
 }
 
-/* ----------------------------------------------------
-   Helper: Append string safely
----------------------------------------------------- */
+
 void appendString(char *dest, const char *src) {
     while (*dest) dest++;   // move to end
     while (*src) {
@@ -41,9 +35,7 @@ void appendString(char *dest, const char *src) {
     *dest = '\0';
 }
 
-/* ----------------------------------------------------
-   Extract next word (A–Z, a–z, 0–9)
----------------------------------------------------- */
+
 int getNextWord(const char *line, int *pos, char *word) {
     int i = *pos;
     int j = 0;
@@ -66,9 +58,7 @@ int getNextWord(const char *line, int *pos, char *word) {
     return 1;
 }
 
-/* ----------------------------------------------------
-   Normalize string (lowercase + remove non-alphanumeric)
----------------------------------------------------- */
+
 void normalizeString(const char *in, char *out) {
     int j = 0;
     int i;
@@ -81,9 +71,6 @@ void normalizeString(const char *in, char *out) {
     out[j] = '\0';
 }
 
-/* ----------------------------------------------------
-   Check if a string is a palindrome
----------------------------------------------------- */
 int checkPalindrome(const char *str, char *reason) {
     int len = getLength(str);
     int left = 0;
@@ -110,9 +97,7 @@ int checkPalindrome(const char *str, char *reason) {
     return 1;
 }
 
-/* ----------------------------------------------------
-   MAIN FILE-PROCESSING FUNCTION (UNCHANGED)
----------------------------------------------------- */
+
 void processFile(const char *filename) {
     FILE *in = fopen(filename, "r");
     FILE *out = fopen(REPORT_FILE, "w");
@@ -203,9 +188,7 @@ void processFile(const char *filename) {
     printf("\nDetailed report: %s\n", REPORT_FILE);
 }
 
-/* ----------------------------------------------------
-   MAIN MENU (UNCHANGED)
----------------------------------------------------- */
+
 int main() {
     char filename[100];
     int choice;
